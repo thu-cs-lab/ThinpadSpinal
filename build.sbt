@@ -1,6 +1,6 @@
 ThisBuild / scalaVersion          := "2.13.1" // Required due to Spinal compatibility problems
 ThisBuild / version               := "1.0.0"
-ThisBuild / organization          := ""
+ThisBuild / organization          := "riscv"
 ThisBuild / transitiveClassifiers := Seq(Artifact.SourceClassifier)
 
 val spinalVersion = "1.6.0"
