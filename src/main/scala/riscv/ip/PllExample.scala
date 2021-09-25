@@ -2,10 +2,14 @@ package riscv.ip
 
 import spinal.core._
 
+import scala.language.postfixOps
+
 /** 封装 pll_example IP 的黑盒
-  * @param outputCount 输出的时钟数量，需和 IP 一致。
+  * @param outputFrequencies
+  *   输出的时钟频率列表，需和 IP 一致。从中可以得知时钟输出数量。
   */
-class PllExample(outputCount: Int = 2) extends BlackBox {
+class PllExample(outputFrequencies: Seq[HertzNumber] = List(10 MHz, 20 MHz))
+    extends BlackBox {
   setDefinitionName("pll_example")
 
   val io = new Bundle {
@@ -17,7 +21,7 @@ class PllExample(outputCount: Int = 2) extends BlackBox {
     val reset = in Bool ()
 
     /** 时钟输出，频率在IP配置界面中设置 */
-    val clkOut = out Vec (Bool, 2)
+    val clkOut = out Vec (Bool, outputFrequencies.length)
 
     /** PLL锁定指示输出，"1"表示时钟稳定，后级电路复位信号应当由它生成 */
     val locked = out Bool ()
@@ -31,6 +35,8 @@ class PllExample(outputCount: Int = 2) extends BlackBox {
 
   /** 获取第 index 个输出时钟域 */
   def outputClockDomain(index: Int): ClockDomain = {
+    require(outputFrequencies.indices contains index)
+
     val tempCd = ClockDomain(
       clock = io.clkOut(index),
       reset = io.locked,
@@ -43,6 +49,10 @@ class PllExample(outputCount: Int = 2) extends BlackBox {
       newReset := False
     }
 
-    ClockDomain(io.clkOut(index), tempCdArea.newReset)
+    ClockDomain(
+      clock = io.clkOut(index),
+      reset = tempCdArea.newReset,
+      frequency = FixedFrequency(outputFrequencies(index))
+    )
   }
 }

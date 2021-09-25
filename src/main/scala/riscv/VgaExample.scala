@@ -23,9 +23,9 @@ import scala.language.postfixOps
   * @param vMax:
   *   vertical max size of value
   * @param hSpp:
-  *   horizontal synchro pulse polarity (0 - negative, 1 - positive)
+  *   horizontal synchro pulse polarity
   * @param vSpp:
-  *   vertical synchro pulse polarity (0 - negative, 1 - positive)
+  *   vertical synchro pulse polarity
   */
 class VgaExample(
     width: Int = 0,

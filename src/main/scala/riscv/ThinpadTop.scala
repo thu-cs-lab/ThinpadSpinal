@@ -1,14 +1,15 @@
 package riscv
 
+import riscv.thinpad._
 import spinal.core._
 import spinal.lib._
-import spinal.lib.com.uart.{Uart, UartCtrl, UartCtrlInitConfig, UartParityType, UartStopType}
+import spinal.lib.com.uart._
 import spinal.lib.graphic.vga.Vga
+import spinal.lib.io.{InOutWrapper, TriStateArray}
 
 import scala.language.postfixOps
 
 class ThinpadTop extends Component {
-  import thinpad._
 
   val io = new Bundle {
 
@@ -39,22 +40,48 @@ class ThinpadTop extends Component {
     /** 数码管高位信号，包括小数点，输出 1 点亮 */
     val dpy1 = out Bits (8 bits)
 
-    /** CPLD串口控制器信号 */
-    val uartControlled = master(UartCpldInterface())
+    /** CPLD串口控制器信号，去除数据信号，数据信号与 [[baseRam]] 数据信号低 8 位共享。
+      *
+      * 不应直接使用此信号，使用下面分配了数据信号的版本即可。
+      */
+    val uartControlled = master(UartControllerInterfaceWithoutData())
 
-    val baseRam = master(SramInterface())
-    val extRam  = master(SramInterface())
+    /** BaseRAM 信号，去除数据信号，数据信号低 8 位与 [[uartControlled]] 共享。
+      *
+      * 不应直接使用此信号，使用下面分配了数据信号的版本即可。
+      */
+    val baseRam = master(SramInterfaceWithoutData())
+
+    /** CPLD 串口控制器和 baseRam 共享的数据信号。
+      *
+      * Z 应避免在 FPGA 内部出现，[[TriStateArray]] 用不使用 Z 的方式表示三态线路，在生成顶层原件时用
+      * [[InOutWrapper]] 将其转换为带 Z 的 inout 线路。
+      */
+    val uartAndBaseRamData = master(TriStateArray(32 bits))
+
+    /** ExtRAM 信号，包括数据信号 */
+    val extRam = master(SramInterface())
 
     /** 直连串口信号 */
     val uartRaw = master(Uart())
 
+    /** Flash存储器信号，参考 JS28F640 芯片手册 */
     val flash = master(Flash())
 
-    /** USB 控制器信号，参考 SL811 芯片手册 */
-    val sl811 = master(SL811Interface())
+    /** USB 控制器信号，去除数据信号，数据信号与 [[dm9k]] 数据信号低 8 位共享，参考 SL811 芯片手册。
+      *
+      * 不应直接使用此信号，使用下面分配了数据信号的版本即可。
+      */
+    val sl811 = master(SL811InterfaceWithoutData())
 
-    /** 网络控制器信号，参考 DM9000A 芯片手册 */
-    val dm9k = master(DM9kInterface())
+    /** 网络控制器信号，去除数据信号，数据信号低 8 位与 [[sl811]] 共享，参考 DM9000A 芯片手册。
+      *
+      * 不应直接使用此信号，使用下面分配了数据信号的版本即可。
+      */
+    val dm9k = master(DM9kInterfaceWithoutData())
+
+    /** USB 控制器和网络控制器共享的数据信号 */
+    val usbAndNetworkData = master(TriStateArray(16 bits))
 
     /** 图像输出信号 */
     val video = master(Vga(vgaConfig))
@@ -65,15 +92,39 @@ class ThinpadTop extends Component {
 
   noIoPrefix()
 
-  /* =========== Demo code begin =========== */
-
   /** 主时钟域 */
-  val mainClockDomain = ClockDomain(io.clk50M, io.resetBtn)
+  val mainClockDomain = ClockDomain(
+    clock = io.clk50M,
+    reset = io.resetBtn,
+    frequency = FixedFrequency(50 MHz)
+  )
 
   /** 由时钟按钮构成的时钟域 */
   val btnClockDomain = ClockDomain(io.clockBtn, io.resetBtn)
 
   val mainClockingArea = new ClockingArea(mainClockDomain) {
+
+    // 将共享的数据信号分配给各个接口。直接使用下列 Bundle 即可。
+    // 需要注意，uartControlled 和 baseRam 仍然不应同时使用数据信号，否则仍会有冲突。sl811 和 dm9k 类似。
+    val uartAndBaseRamDataSharer =
+    new DataWireSharer(32 bits, sharedRanges = Seq(0 until 8, 0 until 32))
+    io.uartAndBaseRamData <> uartAndBaseRamDataSharer.io.shared
+
+    val uartControlled: UartControllerInterface =
+      io.uartControlled.withData(uartAndBaseRamDataSharer.io.ranges(0))
+    val baseRam: SramInterface =
+      io.baseRam.withData(uartAndBaseRamDataSharer.io.ranges(1))
+
+    val usbAndNetworkDataSharer =
+      new DataWireSharer(16 bits, sharedRanges = Seq(0 until 8, 0 until 16))
+    io.usbAndNetworkData <> usbAndNetworkDataSharer.io.shared
+
+    val sl811: SL811Interface =
+      io.sl811.withData(usbAndNetworkDataSharer.io.ranges(0))
+    val dm9k: DM9kInterface =
+      io.dm9k.withData(usbAndNetworkDataSharer.io.ranges(1))
+
+    /* =========== Demo code begin =========== */
 
     // PLL 分频示例
     val clockGen = new ip.PllExample()
@@ -82,14 +133,35 @@ class ThinpadTop extends Component {
     }
 
     // 不使用内存、串口时，禁用其使能信号
-    io.baseRam.ceN := True
-    io.baseRam.oeN := True
-    io.baseRam.weN := True
-    io.extRam.ceN  := True
-    io.extRam.oeN  := True
-    io.extRam.weN  := True
-    io.uartControlled.rdn    := True
-    io.uartControlled.wrn    := True
+    baseRam.ceN := True
+    baseRam.oeN := True
+    baseRam.weN := True
+    baseRam.beN := 0
+    baseRam.addr.assignDontCare()
+    baseRam.data.writeEnable := 0
+    baseRam.data.write.assignDontCare()
+
+    io.extRam.ceN := True
+    io.extRam.oeN := True
+    io.extRam.weN := True
+    io.extRam.beN := 0
+    io.extRam.addr.assignDontCare()
+    io.extRam.data.writeEnable := 0
+    io.extRam.data.write.assignDontCare()
+
+    uartControlled.rdn              := True
+    uartControlled.wrn              := True
+    uartControlled.data.writeEnable := 0
+    uartControlled.data.write.assignDontCare()
+
+    // 其余课程不必须的信号暂时赋 X（assignDontCare）。
+    // 如果需要，可以将对应信号从这里去除。
+    for (
+      undriven <- Seq(io.flash, sl811, dm9k);
+      signal   <- undriven.flatten if !signal.isInput
+    ) {
+      signal.assignDontCare()
+    }
 
     // 数码管连接关系示意图，dpy1同理
     // p=dpy0(0) // ---a---
@@ -126,24 +198,39 @@ class ThinpadTop extends Component {
     )
     io.uartRaw <> uartRawCtrl.io.uart
 
-    // 将读取到的数据转发到 UART 写端，中间加一级缓冲并隔断组合通路
+    // 将读取到的数据转发到 UART 写端，中间加一级寄存器缓冲并隔断组合通路
     uartRawCtrl.io.read >/-> uartRawCtrl.io.write
     // 并存入 number
     number := uartRawCtrl.io.write.payload
 
     // 图像输出演示，分辨率800x600@75Hz，像素时钟为50MHz
-    val vga800x600at75 = new VgaExample()
-    val hData          = vga800x600at75.io.hData
+    val vga800x600at75 = new VgaExample(
+      width = 12,
+      hSize = 800,
+      hFp = 856,
+      hSp = 976,
+      hMax = 1040,
+      vSize = 600,
+      vFp = 637,
+      vSp = 643,
+      vMax = 666,
+      hSpp = HIGH,
+      vSpp = HIGH
+    )
+    val hData = vga800x600at75.io.hData
 
-    io.video.color.r := (hData < 266) ? B"111" | B"3'b0"                 // 红色竖条
-    io.video.color.g := (hData < 532 && hData >= 266) ? B"111" | B"3'b0" // 绿色竖条
-    io.video.color.b := (hData >= 532) ? B"11" | B"2'b0"                 // 蓝色竖条
+    io.video.color.r := (hData < 266) ? U(7) | U(0)                 // 红色竖条
+    io.video.color.g := (hData < 532 && hData >= 266) ? U(7) | U(0) // 绿色竖条
+    io.video.color.b := (hData >= 532) ? U(3) | U(0)                // 蓝色竖条
 
     io.video.colorEn := vga800x600at75.io.colorEn
 
+    io.video.hSync := vga800x600at75.io.hSync
+    io.video.vSync := vga800x600at75.io.vSync
+
     io.videoClk := ClockDomain.current.readClockWire
 
-  }.setName("") // 避免生成 verilog 中信号名有额外前缀
+    /* =========== Demo code end =========== */
 
-  /* =========== Demo code end =========== */
+  }.setName("") // 避免生成 verilog 中信号名有额外前缀
 }
