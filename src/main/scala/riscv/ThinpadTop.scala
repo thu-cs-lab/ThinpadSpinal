@@ -104,26 +104,6 @@ class ThinpadTop extends Component {
 
   val mainClockingArea = new ClockingArea(mainClockDomain) {
 
-    // 将共享的数据信号分配给各个接口。直接使用下列 Bundle 即可。
-    // 需要注意，uartControlled 和 baseRam 仍然不应同时使用数据信号，否则仍会有冲突。sl811 和 dm9k 类似。
-    val uartAndBaseRamDataSharer =
-    new DataWireSharer(32 bits, sharedRanges = Seq(0 until 8, 0 until 32))
-    io.uartAndBaseRamData <> uartAndBaseRamDataSharer.io.shared
-
-    val uartControlled: UartControllerInterface =
-      io.uartControlled.withData(uartAndBaseRamDataSharer.io.ranges(0))
-    val baseRam: SramInterface =
-      io.baseRam.withData(uartAndBaseRamDataSharer.io.ranges(1))
-
-    val usbAndNetworkDataSharer =
-      new DataWireSharer(16 bits, sharedRanges = Seq(0 until 8, 0 until 16))
-    io.usbAndNetworkData <> usbAndNetworkDataSharer.io.shared
-
-    val sl811: SL811Interface =
-      io.sl811.withData(usbAndNetworkDataSharer.io.ranges(0))
-    val dm9k: DM9kInterface =
-      io.dm9k.withData(usbAndNetworkDataSharer.io.ranges(1))
-
     /* =========== Demo code begin =========== */
 
     // PLL 分频示例
@@ -133,13 +113,18 @@ class ThinpadTop extends Component {
     }
 
     // 不使用内存、串口时，禁用其使能信号
-    baseRam.ceN := True
-    baseRam.oeN := True
-    baseRam.weN := True
-    baseRam.beN := 0
-    baseRam.addr.assignDontCare()
-    baseRam.data.writeEnable := 0
-    baseRam.data.write.assignDontCare()
+
+    io.uartControlled.rdn              := True
+    io.uartControlled.wrn              := True
+
+    io.baseRam.ceN := True
+    io.baseRam.oeN := True
+    io.baseRam.weN := True
+    io.baseRam.beN := 0
+    io.baseRam.addr.assignDontCare()
+
+    io.uartAndBaseRamData.writeEnable := 0
+    io.uartAndBaseRamData.write.assignDontCare()
 
     io.extRam.ceN := True
     io.extRam.oeN := True
@@ -149,15 +134,10 @@ class ThinpadTop extends Component {
     io.extRam.data.writeEnable := 0
     io.extRam.data.write.assignDontCare()
 
-    uartControlled.rdn              := True
-    uartControlled.wrn              := True
-    uartControlled.data.writeEnable := 0
-    uartControlled.data.write.assignDontCare()
-
     // 其余课程不必须的信号暂时赋 X（assignDontCare）。
     // 如果需要，可以将对应信号从这里去除。
     for (
-      undriven <- Seq(io.flash, sl811, dm9k);
+      undriven <- Seq(io.flash, io.sl811, io.dm9k, io.usbAndNetworkData);
       signal   <- undriven.flatten if !signal.isInput
     ) {
       signal.assignDontCare()

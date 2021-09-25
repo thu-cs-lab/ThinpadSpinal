@@ -13,43 +13,6 @@ package object thinpad {
   // 由于 ThinpadTop 顶层某些接口间共用数据信号，所以对应的 Bundle 用继承的手段，
   // 实现了带数据信号和不带数据信号的两个版本。
 
-  /** 分享数据信号用的模块。将 io.shared 依照 sharedRanges 指定的范围分享给 io.ranges */
-  class DataWireSharer(width: BitCount, sharedRanges: Seq[Range])
-      extends Component {
-    val io = new Bundle {
-      val shared = master(TriStateArray(width))
-      val ranges = sharedRanges map { r => slave(TriStateArray(r.length bits)) }
-    }
-
-    // shared 默认不写。
-    io.shared.writeEnable := 0
-    io.shared.write.assignDontCare()
-
-    // 各 io.ranges 的读来源于 io.shared 的对应段
-    for (i <- sharedRanges.indices) {
-      io.ranges(i).read := io.shared.read(sharedRanges(i))
-    }
-
-    for (i <- 0 until width.value) {
-      // 包含第 i bit 的 range
-      val relatedRanges = (io.ranges zip sharedRanges).filter(_._2 contains i)
-
-      // 要求同时至多有一个在写第 i 位
-      assert(
-        CountOne(relatedRanges.map(_._1.writeEnable(i))) <= 1,
-        "At most one shared data wire is allowed to be written simultaneously"
-      )
-
-      // 逐个遍历有关的 range，如果某一个在写，则 shared 该位在写，且要写的值是这个 range 要写的值
-      for ((tsa, range) <- relatedRanges) {
-        when(tsa.writeEnable(i - range.start)) {
-          io.shared.writeEnable(i) := True
-          io.shared.write(i)       := tsa.write(i - range.start)
-        }
-      }
-    }
-  }
-
   /** 包含数据信号的 trait */
   trait WithDataWire extends Bundle with IMasterSlave {
 
@@ -94,24 +57,7 @@ package object thinpad {
 
   /** CPLD 串口控制器信号，不包括 data */
   case class UartControllerInterfaceWithoutData()
-      extends UartControllerInterfaceBase {
-
-    def withData(data: TriStateArray): UartControllerInterface = new Composite(
-      this
-    ) {
-      val withData = UartControllerInterface()
-
-      rdn                := withData.rdn
-      wrn                := withData.wrn
-      withData.dataReady := dataReady
-      withData.tbre      := tbre
-      withData.tsre      := tsre
-
-      withData.data.read := data.read
-      data.write         := withData.data.write
-      data.writeEnable   := withData.data.writeEnable
-    }.withData
-  }
+      extends UartControllerInterfaceBase
 
   /** CPLD 串口控制器信号 */
   case class UartControllerInterface()
@@ -144,21 +90,7 @@ package object thinpad {
   }
 
   /** SRAM 信号，不包括 data */
-  case class SramInterfaceWithoutData() extends SramInterfaceBase {
-    def withData(data: TriStateArray): SramInterface = new Composite(this) {
-      val withData = SramInterface()
-
-      addr := withData.addr
-      beN  := withData.beN
-      ceN  := withData.ceN
-      oeN  := withData.oeN
-      weN  := withData.weN
-
-      withData.data.read := data.read
-      data.write         := withData.data.write
-      data.writeEnable   := withData.data.writeEnable
-    }.withData
-  }
+  case class SramInterfaceWithoutData() extends SramInterfaceBase
 
   /** SRAM 信号 */
   case class SramInterface() extends SramInterfaceBase with WithDataWire {
@@ -219,24 +151,7 @@ package object thinpad {
   }
 
   /** USB 控制器信号，不包括 data */
-  case class SL811InterfaceWithoutData() extends SL811InterfaceBase {
-    def withData(data: TriStateArray): SL811Interface = new Composite(this) {
-      val withData = SL811Interface()
-
-      a0             := withData.a0
-      wrN            := withData.wrN
-      rdN            := withData.rdN
-      csN            := withData.csN
-      rstN           := withData.rstN
-      dAckN          := withData.dAckN
-      withData.dRqN  := dRqN
-      withData.intRq := intRq
-
-      withData.data.read := data.read
-      data.write         := withData.data.write
-      data.writeEnable   := withData.data.writeEnable
-    }.withData
-  }
+  case class SL811InterfaceWithoutData() extends SL811InterfaceBase
 
   /** USB 控制器信号，参考 SL811 芯片手册 */
   case class SL811Interface() extends SL811InterfaceBase with WithDataWire {
@@ -260,22 +175,7 @@ package object thinpad {
   }
 
   /** 网络控制器信号，不包括 data */
-  case class DM9kInterfaceWithoutData() extends DM9kInterfaceBase {
-    def withData(data: TriStateArray): DM9kInterface = new Composite(this) {
-      val withData = DM9kInterface()
-
-      cmd          := withData.cmd
-      iowN         := withData.iowN
-      iorN         := withData.iorN
-      csN          := withData.csN
-      pwrstN       := withData.pwrstN
-      withData.int := int
-
-      withData.data.read := data.read
-      data.write         := withData.data.write
-      data.writeEnable   := withData.data.writeEnable
-    }.withData
-  }
+  case class DM9kInterfaceWithoutData() extends DM9kInterfaceBase
 
   /** 网络控制器信号，参考 DM9000A 芯片手册 */
   case class DM9kInterface() extends DM9kInterfaceBase with WithDataWire {
