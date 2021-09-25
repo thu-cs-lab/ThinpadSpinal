@@ -193,7 +193,7 @@ class ThinpadTop extends Component {
         baudrate = 9600,
         dataLength = 7, // 8 bits
         parity = UartParityType.NONE,
-        stop = UartStopType.TWO
+        stop = UartStopType.ONE
       )
     )
     io.uartRaw <> uartRawCtrl.io.uart

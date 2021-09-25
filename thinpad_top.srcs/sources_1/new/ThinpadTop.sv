@@ -1,6 +1,6 @@
 // Generator : SpinalHDL v1.6.0    git head : 73c8d8e2b86b45646e9d0b2e729291f2b65e6be3
 // Component : ThinpadTop
-// Git hash  : d4332c2b0efd0228c3511c89495e89f0191d5d1d
+// Git hash  : 8f7bde36544d1cfe06972d0b7c1e420f3539cb75
 
 
 `define UartParityType_binary_sequential_type [1:0]
@@ -383,7 +383,7 @@ module ThinpadTop (
   );
   UartCtrl uartRawCtrl (
     .io_config_frame_dataLength    (3'b111                                       ), //i
-    .io_config_frame_stop          (`UartStopType_binary_sequential_TWO          ), //i
+    .io_config_frame_stop          (`UartStopType_binary_sequential_ONE          ), //i
     .io_config_frame_parity        (`UartParityType_binary_sequential_NONE       ), //i
     .io_config_clockDivider        (20'h0028a                                    ), //i
     .io_write_valid                (uartRawCtrl_io_read_s2mPipe_m2sPipe_valid    ), //i
