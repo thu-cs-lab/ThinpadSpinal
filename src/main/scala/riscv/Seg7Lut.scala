@@ -31,7 +31,7 @@ class Seg7Lut extends Component {
     )
   )
 
-  io.oSeg := oSegReg ## False
+  io.oSeg := ~oSegReg ## False
 }
 
 object Seg7Lut {

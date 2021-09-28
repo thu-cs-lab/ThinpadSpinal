@@ -1,6 +1,6 @@
 // Generator : SpinalHDL v1.6.0    git head : 73c8d8e2b86b45646e9d0b2e729291f2b65e6be3
 // Component : ThinpadTop
-// Git hash  : f5a0d506773f917c7f0485052ec6dfef1a301783
+// Git hash  : 11d31fc4d0d7703a2f12907d63ff58020a7bca63
 
 
 `define UartParityType_binary_sequential_type [1:0]
@@ -1536,7 +1536,7 @@ module Seg7Lut (
     endcase
   end
 
-  assign io_oSeg = {oSegReg,1'b0};
+  assign io_oSeg = {(~ oSegReg),1'b0};
   always @(posedge clk50M) begin
     oSegReg <= _zz_oSegReg;
   end
