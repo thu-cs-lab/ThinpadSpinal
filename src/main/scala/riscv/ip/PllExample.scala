@@ -1,5 +1,6 @@
 package riscv.ip
 
+import riscv.simUtils
 import spinal.core._
 
 import scala.language.postfixOps
@@ -8,7 +9,7 @@ import scala.language.postfixOps
   * @param outputFrequencies
   *   输出的时钟频率列表，需和 IP 一致。从中可以得知时钟输出数量。
   */
-class PllExample(outputFrequencies: Seq[HertzNumber] = List(10 MHz, 20 MHz))
+class PllExample(val outputFrequencies: Seq[HertzNumber] = List(10 MHz, 20 MHz))
     extends BlackBox {
   setDefinitionName("pll_example")
 
@@ -32,6 +33,21 @@ class PllExample(outputFrequencies: Seq[HertzNumber] = List(10 MHz, 20 MHz))
   // 将 PllExample 实例所在时钟域的 clk 和 reset 映射到这两个 IO 信号，
   // 从而实例化时不需要手动指定这两个 IO 信号的连接。
   mapClockDomain(clock = io.clkIn, reset = io.reset)
+
+  // 仿真；可以先跳过此段。
+  // 当仿真时，改为白盒
+  spinalSimWhiteBox()
+  // 当仿真时（GenerationFlags.simulation.isEnabled），提供实现（仍需要仿真时的代码帮助）。
+  // 此 flag 的设置见 TestBench
+  val sim = GenerationFlags.simulation.isEnabled generate new Area {
+    // 直接将 reset 连至 locked
+    io.locked := io.reset
+    // 时钟输出难以给出，依赖仿真代码提供时钟信号。
+    // 为仿真能够正确驱动，对每个时钟输出，从顶层模块的输入额外拉一条信号进来
+    // （详见 pullFromOutSide），并用下面的 clkOut 记录拉进来的顶层输入。
+    // 仿真时驱动 clkOut 的每一项即可。
+    val clkOut = io.clkOut map simUtils.pullFromOutside
+  }
 
   /** 获取第 index 个输出时钟域 */
   def outputClockDomain(index: Int): ClockDomain = {
