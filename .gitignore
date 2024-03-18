@@ -33,7 +33,8 @@ project/plugins/project/
 .worksheet
 
 # IDEA
-.idea/
+.idea
+out
 
 # Eclipse
 bin/
