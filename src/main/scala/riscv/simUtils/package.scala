@@ -23,7 +23,7 @@ package object simUtils {
     // 在所有 Component 之外建立该输入，并 pull 到 data 所在位置。
     Component.push(null)
     val external = cloneOf(data).setWeakName(data.getName()).simPublic()
-    Component.pop(null)
+    Component.toplevel
 
     data := Data.doPull(external, Component.current, useCache = true)
 
