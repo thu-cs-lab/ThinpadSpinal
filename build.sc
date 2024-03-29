@@ -10,6 +10,7 @@ val spinalVersion = "1.10.1"
 object root extends SbtModule {
   def scalaVersion            = "2.13.12"
   override def millSourcePath = os.pwd
+  def sources                 = T.sources(millSourcePath / "src")
   def ivyDeps = Agg(
     ivy"com.github.spinalhdl::spinalhdl-core:$spinalVersion",
     ivy"com.github.spinalhdl::spinalhdl-lib:$spinalVersion"
