@@ -1,0 +1,3 @@
+[submodule "utils/CoeConverter"]
+	path = utils/CoeConverter
+	url = https://github.com/thu-cs-lab/CoeConverter.git
