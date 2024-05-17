@@ -1,4 +1,4 @@
-# 基于SpinalHDL的 Thinpad 模板工程
+# 基于 SpinalHDL的 Thinpad 模板工程（非官方）
 
 ## 说明
 
@@ -35,4 +35,4 @@
 
 ## 开发人员
 
-本项目由 [TRCYX](https://github.com/TRCYX) 于 2021年9月 创建，目前由 [yuxuan-z19](https://github.com/yuxuan-z19) 维护
+本项目由 [TRCYX](https://github.com/TRCYX) 于 2021 年 9 月 创建，目前由 [yuxuan-z19](https://github.com/yuxuan-z19) 维护
