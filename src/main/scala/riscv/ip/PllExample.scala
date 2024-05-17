@@ -18,13 +18,13 @@ class PllExample(val outputFrequencies: Seq[HertzNumber] = List(10 MHz, 20 MHz))
     /** 外部时钟输入 */
     val clkIn = in Bool ()
 
-    /** PLL复位输入 */
+    /** PLL 复位输入 */
     val reset = in Bool ()
 
-    /** 时钟输出，频率在IP配置界面中设置 */
+    /** 时钟输出，频率在 IP 配置界面中设置 */
     val clkOut = out Vec (Bool, outputFrequencies.length)
 
-    /** PLL锁定指示输出，"1"表示时钟稳定，后级电路复位信号应当由它生成 */
+    /** PLL 锁定指示输出，"1"表示时钟稳定，后级电路复位信号应当由它生成 */
     val locked = out Bool ()
   }
 

@@ -1,10 +1,10 @@
-# 基于 SpinalHDL的 Thinpad 模板工程（非官方）
+# 基于 SpinalHDL 的 Thinpad 模板工程（非官方）
 
 ## 说明
 
 > *240401 Update* 升级至 Scala 2.13.12、更新至 SpinalHDL 1.10.1、支持 `mill` 编译
 
-使用前请阅读[Thinpad项目](https://lab.cs.tsinghua.edu.cn/cod-lab-docs/labs/lab2/thinpad_top/)的组织方式、熟悉[Vivado使用](https://lab.cs.tsinghua.edu.cn/cod-lab-docs/labs/lab2/vivado/)，对 [SpinalHDL](https://spinalhdl.github.io/SpinalDoc-RTD/master/index.html) 有初步了解
+使用前请阅读[Thinpad 项目](https://lab.cs.tsinghua.edu.cn/cod-lab-docs/labs/lab2/thinpad_top/)的组织方式、熟悉[Vivado 使用](https://lab.cs.tsinghua.edu.cn/cod-lab-docs/labs/lab2/vivado/)，对 [SpinalHDL](https://spinalhdl.github.io/SpinalDoc-RTD/master/index.html) 有初步了解
 
 顶层模块为 ThinpadTop.scala 中的 `ThinpadTop`，里面包含示例代码。你可以在其基础上加入自己的代码，或修改已有的示例代码。
 
@@ -16,7 +16,7 @@
 
 ## 安装
 
-你需要在 Linux环境（包括 WSL2）下安装：
+你需要在 Linux 环境（包括 WSL2）下安装：
 
 - `openjdk-17`
 - `sbt` 或 `mill`

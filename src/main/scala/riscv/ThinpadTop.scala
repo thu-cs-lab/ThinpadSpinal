@@ -28,7 +28,7 @@ class ThinpadTop extends Component {
     /** BTN1~BTN4，按钮开关，按下时为 1 */
     val touchBtn = in Bits (4 bits)
 
-    /** 32位拨码开关，拨到 “ON” 时为 1 */
+    /** 32 位拨码开关，拨到“ON”时为 1 */
     val dipSw = in Bits (32 bits)
 
     /** 16 位 LED，输出时 1 点亮 */
@@ -40,7 +40,7 @@ class ThinpadTop extends Component {
     /** 数码管高位信号，包括小数点，输出 1 点亮 */
     val dpy1 = out Bits (8 bits)
 
-    /** CPLD串口控制器信号，去除数据信号，数据信号与 [[baseRam]] 数据信号低 8 位共享。
+    /** CPLD 串口控制器信号，去除数据信号，数据信号与 [[baseRam]] 数据信号低 8 位共享。
       *
       * 不应直接使用此信号，使用下面分配了数据信号的版本即可。
       */
@@ -65,7 +65,7 @@ class ThinpadTop extends Component {
     /** 直连串口信号 */
     val uartRaw = master(Uart())
 
-    /** Flash存储器信号，参考 JS28F640 芯片手册 */
+    /** Flash 存储器信号，参考 JS28F640 芯片手册 */
     val flash = master(Flash())
 
     /** USB 控制器信号，去除数据信号，数据信号与 [[dm9k]] 数据信号低 8 位共享，参考 SL811 芯片手册。
@@ -143,7 +143,7 @@ class ThinpadTop extends Component {
       signal.assignDontCare()
     }
 
-    // 数码管连接关系示意图，dpy1同理
+    // 数码管连接关系示意图，dpy1 同理
     // p=dpy0(0) // ---a---
     // c=dpy0(1) // |     |
     // d=dpy0(2) // f     b
@@ -154,15 +154,15 @@ class ThinpadTop extends Component {
     // g=dpy0(7) // |     |
     //           // ---d---  p
 
-    // 7段数码管译码器演示，将number用16进制显示在数码管上面
+    // 7 段数码管译码器演示，将 number 用 16 进制显示在数码管上面
     val number = Bits(8 bits)
     // 以函数语法将 number 转换为 seg，详见 Seg7Lut
     io.dpy0 := Seg7Lut(number(0 until 4))
     io.dpy1 := Seg7Lut(number(4 until 8))
 
     val btnClockingArea = new ClockingArea(btnClockDomain) {
-      val ledBits = Reg(Bits(16 bits)) init 1 // 复位按下，设置LED为初始值
-      ledBits := ledBits.rotateLeft(1) // 每次按下时钟按钮，LED循环左移
+      val ledBits = Reg(Bits(16 bits)) init 1 // 复位按下，设置 LED 为初始值
+      ledBits := ledBits.rotateLeft(1) // 每次按下时钟按钮，LED 循环左移
       io.leds := ledBits
     }
 
@@ -183,7 +183,7 @@ class ThinpadTop extends Component {
     // 并存入 number
     number := uartRawCtrl.io.write.payload
 
-    // 图像输出演示，分辨率800x600@75Hz，像素时钟为50MHz
+    // 图像输出演示，分辨率 800x600@75Hz，像素时钟为 50MHz
     val vga800x600at75 = new VgaExample(
       width = 12,
       hSize = 800,

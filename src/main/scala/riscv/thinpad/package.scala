@@ -97,7 +97,7 @@ package object thinpad {
     override def dataWidth = 32 bits
   }
 
-  /** Flash存储器信号，参考 JS28F640 芯片手册 */
+  /** Flash 存储器信号，参考 JS28F640 芯片手册 */
   case class Flash() extends Bundle with IMasterSlave {
 
     /** 地址，a0 仅在 8bit 模式有效，16bit 模式无意义 */
@@ -121,7 +121,7 @@ package object thinpad {
     /** 写使能信号，低有效 */
     val weN = Bool
 
-    /** 8bit模式选择，低有效。在使用 flash 的 16bit 模式时请设为 1 */
+    /** 8bit 模式选择，低有效。在使用 flash 的 16bit 模式时请设为 1 */
     val byteN = Bool
 
     override def asMaster() = {
